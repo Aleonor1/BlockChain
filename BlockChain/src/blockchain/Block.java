@@ -1,138 +1,131 @@
 package blockchain;
-
-import java.security.MessageDigest;
-import java.util.Date;
-import java.util.Random;
-
-public class Block {
-    private long timeStamp;
-    private int id;
-    private String previousHash;
-    private int hash;
-    private long finalTime;
+ 
+import java.io.Serializable;
+import java.time.Duration;
+ 
+public class Block implements Serializable {
+ 
+    private static final long serialVersionUID = 1L;
+ 
+    private final int minerId;
+    private final int id;
+    private final int proofLength;
+    private final int proofLengthState;
+    private final long timestamp;
+    private final Hash current;
+    private final Hash previous;
     private int magicNumber;
-    private int numberOfZeroes;
-
+    private transient long generatingTime;
+    private Serializable data;
+ 
+    public Block(int minerId, int id, int proofLength, Hash hashOfPreviousBlock, int proofLengthState, Serializable data) {
+        this.minerId = minerId;
+        this.id = id;
+        this.proofLength = proofLength;
+        this.proofLengthState = proofLengthState;
+        this.data = data;
+        this.timestamp = System.currentTimeMillis();
+        this.previous = hashOfPreviousBlock;
+        this.current = hash();
+    }
+ 
+    private Hash hash() {
+        var start = System.currentTimeMillis();
+        try {
+            while (true) {
+                magicNumber = (int) (Math.random() * Integer.MAX_VALUE);
+                var hash = new Hash(getValues());
+                if (hash.validate(proofLength, getValues())) {
+                    return hash;
+                }
+            }
+        } finally {
+            var end = System.currentTimeMillis();
+            generatingTime = Duration.ofMillis(end - start).toSeconds();
+        }
+    }
+ 
+    private String getValues() {
+        return Integer.toString(magicNumber) +
+                minerId +
+                id +
+                timestamp +
+                data +
+                (previous != null ? previous : 0);
+    }
+ 
+    private boolean validatePrevious(Hash previous) {
+        if (this.previous == null && previous == null) {
+            return true;
+        }
+        if (this.previous.equals(previous)) {
+            return true;
+        }
+        return false;
+    }
+ 
+    public Hash getHash() {
+        return current;
+    }
+ 
     @Override
     public String toString() {
-        return "Block: " +
-                "\nId: " + id +
-                "\nTimeStamp: " + timeStamp +
-                "\nMagicNumber: " + magicNumber +
-                "\nHash of the previous block:\n" + previousHash +
-                "\nHash of the block: \n" + getHash() +
-                "\nBlock was generating for " + ((finalTime-timeStamp)%1000) + " seconds\n";
+        var sb = new StringBuilder();
+        sb.append("Block:");
+        sb.append("\n");
+        sb.append("Created by miner # ");
+        sb.append(minerId);
+        sb.append("\n");
+        sb.append("Id: ");
+        sb.append(id);
+        sb.append("\n");
+        sb.append("Timestamp: ");
+        sb.append(timestamp);
+        sb.append("\n");
+        sb.append("Magic number: ");
+        sb.append(magicNumber);
+        sb.append("\n");
+        sb.append("Hash of the previous block:");
+        sb.append("\n");
+        sb.append(previous == null ? 0 : previous);
+        sb.append("\n");
+        sb.append("Hash of the block:");
+        sb.append("\n");
+        sb.append(current);
+        sb.append("\n");
+        sb.append("Block data:");
+        if (data == null) {
+            sb.append(" no messages");
+            sb.append("\n");
+        } else {
+            sb.append("\n");
+            sb.append(data);
+        }
+        sb.append("Block was generating for ");
+        sb.append(generatingTime);
+        sb.append(" seconds");
+        sb.append("\n");
+        sb.append(proofLengthState == 0
+                ? "N stays the same"
+                : proofLengthState < 0
+                ? "N decreased to " + proofLength
+                : "N increased to " + proofLength);
+        sb.append("\n");
+        return sb.toString();
     }
-
-
-    public long getTimeStamp() {
-        return timeStamp;
-    }
-
-    public void setTimeStamp(long timeStamp) {
-        this.timeStamp = timeStamp;
-    }
-
+ 
     public int getId() {
         return id;
     }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getPreviousHash() {
-        return previousHash;
-    }
-
-    public void setPreviousHash(String previousHash) {
-        this.previousHash = previousHash;
-    }
-
-    public String getHash() {
-        int hash = hashCode();
-        Random rand = new Random();
-        String hashToReturn = applySha256(Integer.toString(hash));
-        while(!validateHash(hashToReturn)){
-            this.magicNumber=rand.nextInt(10000000);
-            hash = hashCode();
-            hashToReturn = applySha256(Integer.toString(hash));
+ 
+    public void validate(Hash previous) {
+        if (!validatePrevious(previous)) {
+            return;
         }
-        finalTime = new Date().getTime();
-        return hashToReturn;
-    }
-
-    public boolean validateHash(String hashToReturn) {
-        for (int i = 0; i < numberOfZeroes; i++) {
-            if (hashToReturn.charAt(i) != '0') {
-                return false;
-            }
+        if (!current.validate(proofLength, getValues())) {
+            return;
         }
-        return true;
+        throw new IllegalArgumentException(String.format("Block %s is not valid!", id));
     }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + hash;
-        result = prime * result + id;
-        result = prime * result + magicNumber;
-        result = prime * result + ((previousHash == null) ? 0 : previousHash.hashCode());
-        result = prime * result + (int) (timeStamp ^ (timeStamp >>> 32));
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        Block other = (Block) obj;
-        if (hash != other.hash)
-            return false;
-        if (id != other.id)
-            return false;
-        if (previousHash == null) {
-            if (other.previousHash != null)
-                return false;
-        } else if (!previousHash.equals(other.previousHash))
-            return false;
-        if (timeStamp != other.timeStamp)
-            return false;
-        return true;
-    }
-
-    public static String applySha256(String input) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            /* Applies sha256 to our input */
-            byte[] hash = digest.digest(input.getBytes("UTF-8"));
-            StringBuilder hexString = new StringBuilder();
-            for (byte elem : hash) {
-                String hex = Integer.toHexString(0xff & elem);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public Block(int id, String string, int numberOfZeroes) {
-        super();
-        this.timeStamp = new Date().getTime();
-        this.id = id;
-        this.previousHash = string;
-        this.hash = this.hashCode();
-        this.numberOfZeroes = numberOfZeroes;
-        Random rand = new Random();
-        this.magicNumber=rand.nextInt(10000000);
-        getHash();
-
-    }
+ 
 }
