@@ -15,24 +15,6 @@ public class Hash implements Serializable {
 
     private String hash(String input) {
         try {
-<<<<<<< Upstream, based on origin/master
-            var digest = MessageDigest.getInstance("SHA-256");
-            var hash = digest.digest(input.getBytes("UTF-8"));
-            var hexString = new StringBuilder();
-            for (var elem : hash) {
-                var hex = Integer.toHexString(0xff & elem);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public boolean validate(int proofLength, String input) {
-        var proof = hash.substring(0, proofLength).replaceAll("0", "");
-=======
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             var hash = digest.digest(input.getBytes("UTF-8"));
             StringBuilder hexString = new StringBuilder();
@@ -49,7 +31,6 @@ public class Hash implements Serializable {
 
     public boolean validate(int proofLength, String input) {
         String proof = hash.substring(0, proofLength).replaceAll("0", "");
->>>>>>> 0073c33 executor multi-threading add chatter bot add
         if (!"".equals(proof)) {
             return false;
         }

@@ -12,13 +12,8 @@ public class MessageList implements Serializable {
  
     @Override
     public String toString() {
-<<<<<<< Upstream, based on origin/master
-        var sb = new StringBuilder();
-        for (var message: messages) {
-=======
         StringBuilder sb = new StringBuilder();
         for (Message message: messages) {
->>>>>>> 0073c33 executor multi-threading add chatter bot add
             sb.append(message);
             sb.append("\n");
         }
