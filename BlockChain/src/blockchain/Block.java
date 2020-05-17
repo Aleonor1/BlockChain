@@ -30,6 +30,7 @@ public class Block implements Serializable {
     }
  
     private Hash hash() {
+<<<<<<< Upstream, based on origin/master
         var start = System.currentTimeMillis();
         try {
             while (true) {
@@ -41,6 +42,19 @@ public class Block implements Serializable {
             }
         } finally {
             var end = System.currentTimeMillis();
+=======
+        long start = System.currentTimeMillis();
+        try {
+            while (true) {
+                magicNumber = (int) (Math.random() * Integer.MAX_VALUE);
+                Hash hash = new Hash(getValues());
+                if (hash.validate(proofLength, getValues())) {
+                    return hash;
+                }
+            }
+        } finally {
+            long end = System.currentTimeMillis();
+>>>>>>> 0073c33 executor multi-threading add chatter bot add
             generatingTime = Duration.ofMillis(end - start).toSeconds();
         }
     }
@@ -70,7 +84,11 @@ public class Block implements Serializable {
  
     @Override
     public String toString() {
+<<<<<<< Upstream, based on origin/master
         var sb = new StringBuilder();
+=======
+        StringBuilder sb = new StringBuilder();
+>>>>>>> 0073c33 executor multi-threading add chatter bot add
         sb.append("Block:");
         sb.append("\n");
         sb.append("Created by miner # ");
