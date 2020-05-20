@@ -1,36 +1,34 @@
 package blockchain;
  
-import java.util.Collection;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
  
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         try {
+            var publicKeyFile = "src/publicKey";
+            var privateKeyFile = "src/privateKey";
             int threadCount = Runtime.getRuntime().availableProcessors();
-            ExecutorService executor = Executors.newFixedThreadPool(5);
+            ExecutorService executor = Executors.newFixedThreadPool(threadCount);
             BlockChain blockChain = new BlockChain();
             for (int i = 0; i < threadCount / 2; i++) {
                 executor.submit(new Miner(blockChain, i));
-                executor.submit(new Chatter(blockChain, "Chatter " + i));
+                executor.submit(new Chatter(blockChain, "Chatter " + i, publicKeyFile, privateKeyFile));
             }
-
             executor.shutdown();
-            executor.awaitTermination(5, TimeUnit.SECONDS);
-           // if (blockChain.blocks() instanceof Collection) {
-             //   System.out.println( ((Collection<?>) blockChain.blocks()).size());
-            //}
-            int i = 0;
-            for (Block block: blockChain.blocks()) {
+            executor.awaitTermination(1, TimeUnit.SECONDS);
+            for (Block block: blockChain
+                    .blocks()
+                    .limit(5)
+                    .collect(Collectors.toList())) {
                 System.out.println(block);
                 System.out.println();
-                if (i++ == 4) {
-                    break;
-                }
             }
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | NoSuchAlgorithmException | InvalidKeySpecException e) {
             e.printStackTrace();
         }
     }
